@@ -1,0 +1,144 @@
+  /*       ПРОГРАММА ЭКСПЕРТНОЙ СИСТЕМЫ  НА ЯЗЫКЕ GURU */
+               /*  файл kapital.rss  */
+GOAL:	ADVICE
+
+INITIAL:
+	 e.tryp = "e" /*ЗАДАЕТ СТРАТЕГИЮ ОЦЕНКИ ПОСЫЛКИ ПРАВИЛА*/
+	 e.lstr = 80  /*максимальная длина строки = 80         */
+	 e.deci = 0   /*нет цифр после десятичной запятой      */
+	 e.lnum = 8   /*длина числа шаблона                    */
+	 minsb  = 500
+	 mindoh = 400
+	 mingl  = 1500
+
+	 advice = unknown
+	 nig =    unknown
+	 gods =   unknown
+	 dohn =   unknown
+	 vsb =    unknown
+	 blag =   unknown
+	 sumvkl = unknown
+	 nsd =    unknown
+	 msb =    unknown
+
+	 clear
+	 output
+	 output"               КАПИТАЛОВЛОЖЕНИЯ  СЕМЬИ"
+	 output
+	 output"          Какая сумма денег имеется для вклада?"
+	 input sumvkl num
+
+
+	 /*    РАЗДЕЛ ПРАВИЛ   */
+
+RULE:	R1
+	IF:	    blag and msb
+	THEN:	  advice = "АКЦИИ"
+	NEEDS:	 blag msb
+	REASON: Вкладывать  в акции,т.к. клиент надежный в финансовом отношении
+	COMMENT: Если  благосостояние хорошее и объём сбережений
+		то    вкладывать в АКЦИИ
+
+RULE:   R2
+IF:     not blag
+THEN:   advice = "СБЕРЕЖЕНИЯ"
+NEEDS:  blag
+REASON: Не вкладывайте в акции, если ваш доход неуйстойчив
+
+RULE:   R3
+IF:     not msb and blag
+THEN:   advice = "КОМПРОМИСС"
+REASON: Если сбережения небольшие, тогда они должны быть увеличены до
+        того, как их вкладывать 
+
+RULE:   R4
+IF:     not dohn
+THEN:   blag=false
+REASON: Для хорошего дохода необходима постоянная работа
+
+RULE:   R5
+        IF:         not (gods>nsd)
+        THEN:     blag=false
+        REASON: Благосостояние семьи плохое, 
+                если годовой доход ниже прожиточного
+
+RULE:   R6
+IF:     dohn and (gods>nsd)
+THEN:   blag=true
+REASON: Доход высокий и постоянный обеспечивает благосостояние
+
+RULE:   R7
+IF:     vsb>(minsb*nig)
+THEN:   msb=true
+NEEDS:  vsb nig ninsb
+REASON: Весомость сбережений зависит от числа иждивенцев  
+
+RULE:   R8
+        IF:       vsb<=(minsb * nig)
+        THEN:   msb = false
+        REASON: При небольшом объеме сбережеений и большом количестве
+                иждивенцев весомость сбережений скорей всего мала
+
+RULE: R9
+IF:   known("nig")
+THEN: nsd=mingl + (nig*mindoh)
+
+/*Определение переменных*/
+  Var: sumvkl
+  Label: сумма наличных денег для вклада
+
+  Var:  advice
+  Label: Рекомендация как надо вкладывать деньги
+ 
+  Var: blag
+  Label: благосостояние семьи
+
+  Var: msb
+  Label: весомость сбережений в банке
+
+  Var: nsd
+  Label: необходимая сумма дохода
+
+VAR:	GODS
+	FIND:	OUTPUT "          Какой Ваш годовой доход семьи?"
+		input gods num using "dddddddd"
+	LABEL:	Годовой доход
+
+VAR:	VSB
+	FIND:	output "Какой у Вас объём сбережений?"
+		input vsb num using "dddddddd"
+	LABEL:	Сумма сбережений семьи в банке
+
+VAR:	DOHN
+	FIND:	      output "          Можете ли Вы ожидать стабильный доход"
+		      OUTPUT "          на следующий год? (да/нет)"
+		      INPUT dohn STR USING "uuu" with "     "
+		      dohn=(dohn="да")
+	LABEL:	Доход надежный
+
+VAR:	NIG
+	FIND:	OUTPUT "          Сколько у Вас иждивенцев?"
+		INPUT nig NUM USING "dddddddd"
+	LABEL:	Число иждивенцев
+
+DO:
+	/*Этот раздел ЭС Выполняется в самом конце работы*/
+	OUTPUT
+	OUTPUT "          Hа основании данной информации:"
+
+	test advice
+	  case "АКЦИИ":
+	       output "          Вам следует вложить всю сумму в акции."
+	       break
+	  case "СБЕРЕЖЕНИЯ":
+	       output "          Вам следует поместить всю сумму в сбережения."
+	       break
+	  case "КОМПРОМИСС":
+	       t1=min(sumvkl,(minsb*nig-vsb))
+	       t2=max(0,sumvkl-t1)
+	       output "          Вам следует поместить в сбережения: ",t1 using "dddddddd грн."
+	       if t2 > 0 then output "          и вложить ", t2 using "dddddddd грн.", " в акции"; endif
+	       break
+	   endtest
+
+END:
